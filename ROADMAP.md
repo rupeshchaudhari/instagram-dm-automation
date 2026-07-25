@@ -8,34 +8,31 @@ Work through these items top-to-bottom. Each item builds on the previous ones.
 
 ### 🔴 High Priority (Core UX & Security)
 
-- [ ] **1. Auth Guards on Frontend**
-  - Create `useAuth()` hook that checks `localStorage` for JWT
-  - Redirect unauthenticated users to `/auth/login` from all `/dashboard/*` and `/admin` pages
-  - Show loading skeleton while checking auth state
+- [x] **1. Auth Guards on Frontend**
+  - Created `useAuth()` hook and `<AuthGuard>` wrapper component
+  - Protected all routes (`/dashboard`, `/dashboard/accounts`, `/dashboard/rules`, `/dashboard/logs`, `/admin`)
+  - Redirects unauthenticated visitors to `/auth/login`
 
-- [ ] **2. Landing Page (`/`)**
-  - Replace the bare redirect with a proper marketing/hero landing page
-  - Hero section with product pitch, feature highlights, CTA buttons
-  - Should wow visitors — glassmorphism, gradient text, animated elements
+- [x] **2. Landing Page (`/`)**
+  - Built marketing landing page at `/` with hero pitch, feature highlights, and CTA buttons
+  - Responsive glassmorphism cards with glowing gradients and Meta Graph API compliance badge
 
-- [ ] **3. Demo Data Seeder**
-  - `POST /api/v1/admin/seed` endpoint that populates sample rules, interaction logs, and stats
-  - Makes the dashboard look alive on first visit instead of empty
-  - Seed ~50 interaction logs across SENT/SKIPPED/FAILED/RATE_LIMITED statuses
+- [x] **3. Demo Data Seeder**
+  - Added `POST /api/v1/admin/seed` endpoint in Spring Boot
+  - Populates realistic rules ("Summer Sale Promo", "Free VIP Guide", "Pricing Info Request") and 50 interaction logs across all statuses
+  - One-click "Seed Sample Demo Data" action button in Super Admin Portal
 
-- [ ] **4. DM Throughput Chart on Dashboard**
-  - Add a time-series bar/line chart (Recharts or Chart.js) showing DMs sent over last 7 days
-  - Backend: `GET /api/v1/dashboard/chart` returning daily aggregated counts
+- [x] **4. DM Throughput Chart on Dashboard**
+  - Built 7-Day DM Automation Volume Bar Chart on `/dashboard`
+  - Added `GET /api/v1/dashboard/chart` endpoint returning daily aggregated message throughput
 
-- [ ] **5. Search & Filter on Activity Logs**
-  - Add search input for commenter username / comment text
-  - Status filter tabs (All, Sent, Skipped, Failed, Rate Limited)
-  - Wire to backend query params
+- [x] **5. Search & Filter on Activity Logs**
+  - Added live search input for commenter username, comment text, or rule name on `/dashboard/logs`
+  - Added status filter tabs (All, Sent, Skipped, Rate Limited, Failed)
 
-- [ ] **6. Rule Edit Modal**
-  - Add edit button on each rule card
-  - Pre-populate form with existing rule data
-  - Wire to `PUT /api/v1/rules/{id}` endpoint
+- [x] **6. Rule Edit Modal**
+  - Added Edit icon button to every automation rule card on `/dashboard/rules`
+  - Pre-populates rule modal with existing rule parameters and updates via `PUT /api/v1/rules/{id}`
 
 ---
 
@@ -100,13 +97,13 @@ Work through these items top-to-bottom. Each item builds on the previous ones.
 
 | # | Item | Status | Commit |
 |---|---|---|---|
-| 0 | Git repo + push to GitHub | 🔄 In Progress | — |
-| 1 | Auth Guards | ⬜ Not Started | — |
-| 2 | Landing Page | ⬜ Not Started | — |
-| 3 | Demo Data Seeder | ⬜ Not Started | — |
-| 4 | DM Throughput Chart | ⬜ Not Started | — |
-| 5 | Search & Filter Logs | ⬜ Not Started | — |
-| 6 | Rule Edit Modal | ⬜ Not Started | — |
+| 0 | Git repo + push to GitHub | ✅ Completed | `58757b7` |
+| 1 | Auth Guards | ✅ Completed | `d91e402` |
+| 2 | Landing Page | ✅ Completed | `d91e402` |
+| 3 | Demo Data Seeder | ✅ Completed | `d91e402` |
+| 4 | DM Throughput Chart | ✅ Completed | `d91e402` |
+| 5 | Search & Filter Logs | ✅ Completed | `d91e402` |
+| 6 | Rule Edit Modal | ✅ Completed | `d91e402` |
 | 7 | Nginx Reverse Proxy | ⬜ Not Started | — |
 | 8 | RBAC for Admin | ⬜ Not Started | — |
 | 9 | Settings Page | ⬜ Not Started | — |

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import AuthGuard from '@/components/AuthGuard';
 import { apiFetch } from '@/lib/api';
 import { Zap, Plus, ToggleLeft, ToggleRight, Trash2, Edit3, X, HelpCircle } from 'lucide-react';
 
@@ -47,6 +48,8 @@ export default function RulesPage() {
     loadRules();
   }, []);
 
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+
   const handleAddKeyword = () => {
     if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
       setKeywords([...keywords, keywordInput.trim().toLowerCase()]);
@@ -58,28 +61,62 @@ export default function RulesPage() {
     setKeywords(keywords.filter((k) => k !== kw));
   };
 
-  const handleCreateRule = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingRuleId(null);
+    setName('');
+    setTriggerType('keyword');
+    setKeywords([]);
+    setDmTemplate('Hi {{username}}! Here is the link you requested: https://example.com');
+    setDailyDmLimit(100);
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (rule: Rule) => {
+    setEditingRuleId(rule.id);
+    setName(rule.name);
+    setTriggerType(rule.triggerType);
+    setKeywords(rule.triggerKeywords || []);
+    setDmTemplate(rule.dmTemplate);
+    setDailyDmLimit(rule.dailyDmLimit);
+    setShowModal(true);
+  };
+
+  const handleSaveRule = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      await apiFetch('/rules', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          triggerType,
-          triggerKeywords: keywords,
-          dmTemplate,
-          dailyDmLimit,
-        }),
-      });
+      if (editingRuleId) {
+        await apiFetch(`/rules/${editingRuleId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name,
+            triggerType,
+            triggerKeywords: keywords,
+            dmTemplate,
+            dailyDmLimit,
+          }),
+        });
+      } else {
+        await apiFetch('/rules', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            triggerType,
+            triggerKeywords: keywords,
+            dmTemplate,
+            dailyDmLimit,
+          }),
+        });
+      }
 
       setShowModal(false);
+      setEditingRuleId(null);
       setName('');
       setKeywords([]);
       loadRules();
     } catch (err: any) {
-      alert(err.message || 'Failed to create rule');
+      alert(err.message || 'Failed to save rule');
     } finally {
       setSubmitting(false);
     }
@@ -109,6 +146,7 @@ export default function RulesPage() {
   };
 
   return (
+    <AuthGuard>
     <div className="flex min-h-screen bg-[#090d16]">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
@@ -117,13 +155,13 @@ export default function RulesPage() {
         <main className="p-6 space-y-6 flex-1 overflow-y-auto">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/5">
             <div>
-              <h1 className="text-2xl font-bold text-slate-100">Automation Rules</h1>
-              <p className="text-xs text-slate-400">Define comment keyword triggers and automated DM responses</p>
+              <h1 className="text-2xl font-bold text-slate-100">Automation Rule Builder</h1>
+              <p className="text-xs text-slate-400">Configure comment keyword triggers and dynamic DM templates</p>
             </div>
 
             <button
-              onClick={() => setShowModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-semibold hover:opacity-95 transition-opacity shadow-lg shadow-indigo-500/25"
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-semibold hover:opacity-95 transition-opacity shadow-lg shadow-indigo-500/20"
             >
               <Plus className="w-4 h-4" />
               New Automation Rule
@@ -191,13 +229,22 @@ export default function RulesPage() {
                     <span>
                       Sent Today: <strong className="text-slate-200">{rule.dmSentToday}</strong> / {rule.dailyDmLimit}
                     </span>
-                    <button
-                      onClick={() => handleDeleteRule(rule.id)}
-                      className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
-                      title="Delete Rule"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEditModal(rule)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+                        title="Edit Rule"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteRule(rule.id)}
+                        className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
+                        title="Delete Rule"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -206,16 +253,18 @@ export default function RulesPage() {
 
           {/* Modal */}
           {showModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-              <div className="glass-card w-full max-w-lg p-6 rounded-2xl border border-white/10 shadow-2xl space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <h3 className="text-lg font-bold text-slate-100">Create Automation Rule</h3>
-                  <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="glass-card w-full max-w-lg rounded-2xl p-6 border border-white/10 space-y-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <h3 className="text-lg font-bold text-slate-100">
+                  {editingRuleId ? 'Edit Automation Rule' : 'Create New Automation Rule'}
+                </h3>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-200">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-                <form onSubmit={handleCreateRule} className="space-y-4">
+              <form onSubmit={handleSaveRule} className="space-y-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1.5">Rule Campaign Name</label>
                     <input
@@ -316,20 +365,20 @@ export default function RulesPage() {
                     />
                   </div>
 
-                  <div className="pt-3 border-t border-white/10 flex justify-end gap-2">
+                  <div className="pt-3 flex gap-3">
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white"
+                      className="flex-1 py-2.5 rounded-xl border border-white/10 text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30"
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-xs font-semibold hover:opacity-95 transition-opacity"
                     >
-                      {submitting ? 'Creating...' : 'Save & Enable Rule'}
+                      {submitting ? 'Saving...' : editingRuleId ? 'Save Changes' : 'Create Rule'}
                     </button>
                   </div>
                 </form>
@@ -339,5 +388,6 @@ export default function RulesPage() {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }

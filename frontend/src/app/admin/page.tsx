@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
+import AuthGuard from '@/components/AuthGuard';
 import { apiFetch } from '@/lib/api';
 import { Users, Shield, Cpu, Activity, Zap, CheckCircle2, AlertTriangle, Layers, ArrowUpRight } from 'lucide-react';
 
@@ -81,7 +82,18 @@ export default function AdminPortalPage() {
       u.name.toLowerCase().includes(filter.toLowerCase())
   );
 
+  const handleSeedDemoData = async () => {
+    try {
+      const res = await apiFetch<{ message: string; logsSeeded: number }>('/admin/seed', { method: 'POST' });
+      alert(res.message || 'Demo data seeded!');
+      loadAdminData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to seed demo data');
+    }
+  };
+
   return (
+    <AuthGuard>
     <div className="flex min-h-screen bg-[#090d16]">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
@@ -101,6 +113,14 @@ export default function AdminPortalPage() {
                 Global SaaS multi-tenant metrics, user plan management, and Meta API rate limit health
               </p>
             </div>
+
+            <button
+              onClick={handleSeedDemoData}
+              className="px-4 py-2 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-2 transition-colors self-start sm:self-auto"
+            >
+              <Zap className="w-4 h-4 text-indigo-400" />
+              Seed Sample Demo Data
+            </button>
           </div>
 
           {/* Platform KPI Grid */}
@@ -296,5 +316,6 @@ export default function AdminPortalPage() {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }
