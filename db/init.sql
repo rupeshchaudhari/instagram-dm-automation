@@ -17,6 +17,8 @@ CREATE TABLE users (
     name            VARCHAR(255),
     plan_tier       VARCHAR(20)  NOT NULL DEFAULT 'free'
                         CHECK (plan_tier IN ('free', 'pro', 'enterprise')),
+    role            VARCHAR(20)  NOT NULL DEFAULT 'USER'
+                        CHECK (role IN ('USER', 'ADMIN')),
     is_active       BOOLEAN      NOT NULL DEFAULT true,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()

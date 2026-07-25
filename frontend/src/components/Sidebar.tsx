@@ -2,18 +2,36 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Instagram, Zap, Activity, Shield, LogOut } from 'lucide-react';
+import { LayoutDashboard, Instagram, Zap, Activity, Shield, Settings, LogOut } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('igdm_user');
+      if (cached) {
+        try {
+          const user = JSON.parse(cached);
+          setIsAdmin(user.role === 'ADMIN');
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   const navItems = [
-    { name: 'Overview', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Instagram Accounts', path: '/dashboard/accounts', icon: Instagram },
-    { name: 'Automation Rules', path: '/dashboard/rules', icon: Zap },
-    { name: 'Activity Logs', path: '/dashboard/logs', icon: Activity },
-    { name: 'Admin Portal', path: '/admin', icon: Shield },
-  ];
+    { name: 'Overview', path: '/dashboard', icon: LayoutDashboard, adminOnly: false },
+    { name: 'Instagram Accounts', path: '/dashboard/accounts', icon: Instagram, adminOnly: false },
+    { name: 'Automation Rules', path: '/dashboard/rules', icon: Zap, adminOnly: false },
+    { name: 'Activity Logs', path: '/dashboard/logs', icon: Activity, adminOnly: false },
+    { name: 'Settings', path: '/dashboard/settings', icon: Settings, adminOnly: false },
+    { name: 'Admin Portal', path: '/admin', icon: Shield, adminOnly: true },
+  ].filter((item) => !item.adminOnly || isAdmin);
 
   const handleLogout = () => {
     localStorage.removeItem('igdm_jwt');

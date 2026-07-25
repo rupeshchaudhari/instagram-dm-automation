@@ -42,18 +42,21 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered"));
         }
 
+        boolean isFirstUser = userRepository.count() == 0;
+
         User user = new User();
         user.setEmail(request.getEmail().toLowerCase().trim());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setName(request.getName());
         user.setPlanTier("free");
+        user.setRole(isFirstUser ? "ADMIN" : "USER");
         user.setActive(true);
 
         user = userRepository.save(user);
-        log.info("Registered new user: {}", user.getEmail());
+        log.info("Registered new user: {} with role {}", user.getEmail(), user.getRole());
 
         String token = tokenProvider.generateToken(user.getId(), user.getEmail());
-        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier());
+        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier(), user.getRole());
 
         return ResponseEntity.ok(new AuthResponse(token, profile));
     }
@@ -75,7 +78,7 @@ public class AuthController {
         }
 
         String token = tokenProvider.generateToken(user.getId(), user.getEmail());
-        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier());
+        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier(), user.getRole());
 
         log.info("User logged in: {}", user.getEmail());
         return ResponseEntity.ok(new AuthResponse(token, profile));
@@ -89,7 +92,7 @@ public class AuthController {
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
         }
-        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier());
+        UserProfileDto profile = new UserProfileDto(user.getId(), user.getEmail(), user.getName(), user.getPlanTier(), user.getRole());
         return ResponseEntity.ok(profile);
     }
 }

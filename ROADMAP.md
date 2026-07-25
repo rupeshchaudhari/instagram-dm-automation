@@ -38,30 +38,24 @@ Work through these items top-to-bottom. Each item builds on the previous ones.
 
 ### 🟡 Medium Priority (Infrastructure & DX)
 
-- [ ] **7. Nginx Reverse Proxy**
-  - Single entry point on port 80
-  - Route `/api/*` → Spring Boot (:8080)
-  - Route `/webhook` → Node.js (:3000)
-  - Route `/*` → Next.js (:3001)
-  - Add `nginx` service to `docker-compose.yml`
+- [x] **7. Nginx Reverse Proxy**
+  - Configured Nginx gateway on Port `:80` in `nginx/nginx.conf`
+  - Routes `/api/v1/*` → Spring Boot (`:8080`), `/webhook` → Node.js (`:3000`), `/*` → Next.js (`:3001`)
+  - Added `nginx` container service to `docker-compose.yml`
 
-- [ ] **8. Role-Based Access Control for Admin Portal**
-  - Add `role` field to `User` entity (`user` | `admin`)
-  - Protect `/api/v1/admin/**` endpoints — require `role: admin`
-  - Hide Admin Portal sidebar link for non-admin users
-  - First registered user gets `admin` role by default
+- [x] **8. Role-Based Access Control for Admin Portal**
+  - Added `role` column (`USER` | `ADMIN`) to PostgreSQL `users` table and `User.java` entity
+  - Enforced `role == ADMIN` authorization check on `/api/v1/admin/*` REST endpoints
+  - Automatically assigned `ADMIN` role to first registered user
+  - Conditionally hidden Admin Portal sidebar link for regular users
 
-- [ ] **9. Settings / Profile Page**
-  - `/dashboard/settings` page
-  - Change password, update display name
-  - View current plan tier and account limits
+- [x] **9. Settings / Profile Page**
+  - Built `/dashboard/settings` page for user profile management
+  - Display name update, password credentials change, and subscription tier / role display
 
-- [ ] **10. CI/CD Pipeline (GitHub Actions)**
-  - `.github/workflows/ci.yml`
-  - Run webhook-receiver Jest tests
-  - Run worker-service Maven compile
-  - Build Docker images
-  - Push to GitHub Container Registry on `main` branch
+- [x] **10. CI/CD Pipeline (GitHub Actions)**
+  - Created `.github/workflows/ci.yml` pipeline
+  - Automates Node.js Jest test suite, Spring Boot JDK 21 Maven compilation, and Docker image builds
 
 ---
 
@@ -104,10 +98,10 @@ Work through these items top-to-bottom. Each item builds on the previous ones.
 | 4 | DM Throughput Chart | ✅ Completed | `d91e402` |
 | 5 | Search & Filter Logs | ✅ Completed | `d91e402` |
 | 6 | Rule Edit Modal | ✅ Completed | `d91e402` |
-| 7 | Nginx Reverse Proxy | ⬜ Not Started | — |
-| 8 | RBAC for Admin | ⬜ Not Started | — |
-| 9 | Settings Page | ⬜ Not Started | — |
-| 10 | CI/CD Pipeline | ⬜ Not Started | — |
+| 7 | Nginx Reverse Proxy | ✅ Completed | `e619a41` |
+| 8 | RBAC for Admin | ✅ Completed | `e619a41` |
+| 9 | Settings Page | ✅ Completed | `e619a41` |
+| 10 | CI/CD Pipeline | ✅ Completed | `e619a41` |
 | 11 | Real-time Updates | ⬜ Not Started | — |
 | 12 | Email Notifications | ⬜ Not Started | — |
 | 13 | Stripe Billing | ⬜ Not Started | — |

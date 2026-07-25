@@ -64,17 +64,20 @@ public class AuthDto {
         private String email;
         private String name;
         private String planTier;
+        private String role;
 
-        public UserProfileDto(UUID id, String email, String name, String planTier) {
+        public UserProfileDto(UUID id, String email, String name, String planTier, String role) {
             this.id = id;
             this.email = email;
             this.name = name;
             this.planTier = planTier;
+            this.role = role;
         }
 
         public UUID getId() { return id; }
         public String getEmail() { return email; }
         public String getName() { return name; }
         public String getPlanTier() { return planTier; }
+        public String getRole() { return role; }
     }
 }

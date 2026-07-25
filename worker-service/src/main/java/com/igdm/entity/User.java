@@ -26,6 +26,9 @@ public class User {
     @Column(name = "plan_tier", nullable = false)
     private String planTier = "free";
 
+    @Column(name = "role", nullable = false)
+    private String role = "USER";
+
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
@@ -62,6 +65,9 @@ public class User {
 
     public String getPlanTier() { return planTier; }
     public void setPlanTier(String planTier) { this.planTier = planTier; }
+
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }

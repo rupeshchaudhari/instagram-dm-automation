@@ -144,6 +144,25 @@ services:
     networks:
       - igdm-network
 
+  # ==========================================
+  # Nginx — Unified Reverse Proxy Gateway
+  # Entrypoint on Port 80 for all services
+  # ==========================================
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: igdm-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - webhook-receiver
+      - worker-service
+    networks:
+      - igdm-network
+
 # ==========================================
 # Volumes — Persistent data
 # ==========================================

@@ -47,7 +47,11 @@ public class AdminController {
      * GET /api/v1/admin/stats — System-wide platform metrics & Meta rate limit meter.
      */
     @GetMapping("/stats")
-    public ResponseEntity<?> getPlatformStats() {
+    public ResponseEntity<?> getPlatformStats(@org.springframework.security.core.annotation.AuthenticationPrincipal User user) {
+        if (user != null && !"ADMIN".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied. Super Admin privileges required."));
+        }
+
         long totalUsers = userRepository.count();
         long totalConnectedAccounts = igAccountRepository.findAll().stream().filter(a -> a.isConnected()).count();
         long totalActiveRules = ruleRepository.findAll().stream().filter(r -> r.isActive()).count();

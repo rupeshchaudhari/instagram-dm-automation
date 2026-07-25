@@ -1,0 +1,73 @@
+name: Instagram DM Automation — Continuous Integration
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-webhook-receiver:
+    name: Node.js Webhook Receiver Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: webhook-receiver/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd webhook-receiver
+          npm ci
+
+      - name: Run Jest Test Suite
+        run: |
+          cd webhook-receiver
+          npm test -- --coverage
+
+  test-worker-service:
+    name: Spring Boot Worker Service Maven Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Make Maven Wrapper Executable
+        run: chmod +x worker-service/mvnw
+
+      - name: Compile and Test Spring Boot Worker
+        run: |
+          cd worker-service
+          ./mvnw compile test-compile -q
+
+  build-docker-containers:
+    name: Docker Compose Container Build Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose config
+
+      - name: Build Webhook Receiver Container Image
+        run: docker build -t igdm-webhook:ci ./webhook-receiver
+
+      - name: Build Worker Service Container Image
+        run: docker build -t igdm-worker:ci ./worker-service
+
+      - name: Build Frontend Next.js Container Image
+        run: docker build -t igdm-frontend:ci ./frontend
