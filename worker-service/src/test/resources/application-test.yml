@@ -1,0 +1,29 @@
+# ===================================
+# Test Profile Configuration
+# ===================================
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  flyway:
+    enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        acknowledge-mode: auto
+
+# Use a valid 32-byte hex key for tests
+app:
+  meta:
+    app-id: test-app-id
+    app-secret: test-app-secret
+    verify-token: test-verify-token
+  security:
+    jwt-secret: test-jwt-secret-at-least-32-chars-long
+  encryption:
+    token-key: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+logging:
+  level:
+    com.igdm: DEBUG

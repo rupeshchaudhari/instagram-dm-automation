@@ -1,0 +1,27 @@
+{
+  "name": "webhook-receiver",
+  "version": "1.0.0",
+  "description": "Ultra-fast Node.js webhook receiver for Instagram comment events via Meta Graph API",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "express": "^4.21.0",
+    "pino": "^9.4.0",
+    "pino-pretty": "^11.2.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^9.10.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

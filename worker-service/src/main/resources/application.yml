@@ -1,0 +1,80 @@
+# ===================================
+# IG DM Worker Service — Configuration
+# ===================================
+
+server:
+  port: ${WORKER_PORT:8080}
+
+spring:
+  application:
+    name: igdm-worker-service
+
+  # --- PostgreSQL ---
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:postgres}:${POSTGRES_PORT:5432}/${POSTGRES_DB:igdm_automation}
+    username: ${POSTGRES_USER:igdm_admin}
+    password: ${POSTGRES_PASSWORD:changeme_pg_password}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # --- Flyway ---
+  flyway:
+    enabled: false  # Using init.sql for bootstrap; enable for production migrations
+    locations: classpath:db/migration
+
+  # --- RabbitMQ ---
+  rabbitmq:
+    host: ${RABBITMQ_HOST:rabbitmq}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:igdm_rabbit}
+    password: ${RABBITMQ_DEFAULT_PASS:changeme_rabbit_password}
+    listener:
+      simple:
+        concurrency: 2
+        max-concurrency: 5
+        prefetch: 10
+        default-requeue-rejected: false
+
+  # --- Security (permit actuator for now) ---
+  security:
+    user:
+      name: admin
+      password: admin
+
+# --- Actuator ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# --- App-Specific ---
+app:
+  meta:
+    app-id: ${META_APP_ID:}
+    app-secret: ${META_APP_SECRET:}
+    verify-token: ${META_VERIFY_TOKEN:}
+  security:
+    jwt-secret: ${JWT_SECRET:changeme_jwt_secret_at_least_32_chars_long}
+    jwt-expiration-ms: 86400000  # 24 hours
+  encryption:
+    token-key: ${TOKEN_ENCRYPTION_KEY:changeme_32_byte_hex_key_for_aes256}
+
+logging:
+  level:
+    com.igdm: DEBUG
+    org.springframework.amqp: INFO

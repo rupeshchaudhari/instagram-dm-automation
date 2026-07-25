@@ -1,0 +1,108 @@
+package com.igdm.controller;
+
+import com.igdm.dto.DashboardDto.*;
+import com.igdm.entity.AutomationRule;
+import com.igdm.entity.InstagramAccount;
+import com.igdm.entity.InteractionLog;
+import com.igdm.entity.User;
+import com.igdm.repository.AutomationRuleRepository;
+import com.igdm.repository.InstagramAccountRepository;
+import com.igdm.repository.InteractionLogRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+@RestController
+@RequestMapping("/api/v1/dashboard")
+public class DashboardController {
+
+    private final InstagramAccountRepository igAccountRepository;
+    private final AutomationRuleRepository ruleRepository;
+    private final InteractionLogRepository logRepository;
+
+    public DashboardController(
+            InstagramAccountRepository igAccountRepository,
+            AutomationRuleRepository ruleRepository,
+            InteractionLogRepository logRepository) {
+        this.igAccountRepository = igAccountRepository;
+        this.ruleRepository = ruleRepository;
+        this.logRepository = logRepository;
+    }
+
+    /**
+     * GET /api/v1/dashboard/stats — Aggregated KPI metrics for dashboard view.
+     */
+    @GetMapping("/stats")
+    public ResponseEntity<?> getStats(@AuthenticationPrincipal User user) {
+        List<InstagramAccount> accounts = igAccountRepository.findByUserIdAndIsConnectedTrue(user.getId());
+        List<UUID> accountIds = accounts.stream().map(InstagramAccount::getId).toList();
+
+        List<AutomationRule> rules = ruleRepository.findAll().stream()
+                .filter(r -> accountIds.contains(r.getIgAccount().getId()))
+                .toList();
+
+        long dmsSentToday = rules.stream().mapToLong(AutomationRule::getDmSentToday).sum();
+        int activeRulesCount = (int) rules.stream().filter(AutomationRule::isActive).count();
+
+        // Calculate total sent logs for this user
+        long totalSent = logRepository.findAll().stream()
+                .filter(l -> l.getRule() != null && accountIds.contains(l.getRule().getIgAccount().getId()))
+                .filter(l -> "SENT".equals(l.getStatus()))
+                .count();
+
+        long totalProcessed = logRepository.findAll().stream()
+                .filter(l -> l.getRule() != null && accountIds.contains(l.getRule().getIgAccount().getId()))
+                .count();
+
+        double conversionRate = totalProcessed > 0 ? ((double) totalSent / totalProcessed) * 100.0 : 0.0;
+
+        DashboardStatsResponse stats = new DashboardStatsResponse(
+                totalSent,
+                dmsSentToday,
+                activeRulesCount,
+                accounts.size(),
+                Math.round(conversionRate * 10.0) / 10.0
+        );
+
+        return ResponseEntity.ok(stats);
+    }
+
+    /**
+     * GET /api/v1/dashboard/logs — Paginated activity feed of comment interactions.
+     */
+    @GetMapping("/logs")
+    public ResponseEntity<?> getLogs(
+            @AuthenticationPrincipal User user,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<InteractionLog> logPage = logRepository.findByUserId(user.getId(), PageRequest.of(page, size));
+
+        List<InteractionLogResponse> items = logPage.getContent().stream()
+                .map(l -> new InteractionLogResponse(
+                        l.getId(),
+                        l.getRule() != null ? l.getRule().getName() : "Unassigned",
+                        l.getIgCommentId(),
+                        l.getIgCommenterUsername() != null ? l.getIgCommenterUsername() : l.getIgCommenterId(),
+                        l.getCommentText(),
+                        l.getStatus(),
+                        l.getDmContentSent(),
+                        l.getErrorMessage(),
+                        l.getCreatedAt()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(Map.of(
+                "logs", items,
+                "currentPage", logPage.getNumber(),
+                "totalPages", logPage.getTotalPages(),
+                "totalElements", logPage.getTotalElements()
+        ));
+    }
+}

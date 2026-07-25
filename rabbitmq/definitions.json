@@ -1,0 +1,109 @@
+{
+  "users": [
+    {
+      "name": "igdm_rabbit",
+      "password": "changeme_rabbit_password",
+      "tags": ["administrator"]
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "igdm_rabbit",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "default-exchange": "",
+  "exchanges": [
+    {
+      "name": "ig.events",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "ig.events.retry",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "ig.events.dlx",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "ig.comments.process",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "ig.events.retry",
+        "x-dead-letter-routing-key": "comment.retry"
+      }
+    },
+    {
+      "name": "ig.comments.retry",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "ig.events",
+        "x-dead-letter-routing-key": "comment.created",
+        "x-message-ttl": 5000
+      }
+    },
+    {
+      "name": "ig.comments.dead-letter",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "ig.events",
+      "vhost": "/",
+      "destination": "ig.comments.process",
+      "destination_type": "queue",
+      "routing_key": "comment.created",
+      "arguments": {}
+    },
+    {
+      "source": "ig.events.retry",
+      "vhost": "/",
+      "destination": "ig.comments.retry",
+      "destination_type": "queue",
+      "routing_key": "comment.retry",
+      "arguments": {}
+    },
+    {
+      "source": "ig.events.dlx",
+      "vhost": "/",
+      "destination": "ig.comments.dead-letter",
+      "destination_type": "queue",
+      "routing_key": "comment.dead",
+      "arguments": {}
+    }
+  ]
+}

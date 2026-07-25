@@ -1,0 +1,40 @@
+# Instagram DM Automation — .gitignore
+
+# Environment secrets
+.env
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-error.log*
+coverage/
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Java / Maven
+worker-service/target/
+*.class
+*.jar
+*.war
+!worker-service/.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
