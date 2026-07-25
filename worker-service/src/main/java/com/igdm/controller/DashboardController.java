@@ -25,14 +25,17 @@ public class DashboardController {
     private final InstagramAccountRepository igAccountRepository;
     private final AutomationRuleRepository ruleRepository;
     private final InteractionLogRepository logRepository;
+    private final com.igdm.service.SseNotificationService sseNotificationService;
 
     public DashboardController(
             InstagramAccountRepository igAccountRepository,
             AutomationRuleRepository ruleRepository,
-            InteractionLogRepository logRepository) {
+            InteractionLogRepository logRepository,
+            com.igdm.service.SseNotificationService sseNotificationService) {
         this.igAccountRepository = igAccountRepository;
         this.ruleRepository = ruleRepository;
         this.logRepository = logRepository;
+        this.sseNotificationService = sseNotificationService;
     }
 
     /**
@@ -129,5 +132,13 @@ public class DashboardController {
         }
 
         return ResponseEntity.ok(Map.of("chart", chartData));
+    }
+
+    /**
+     * GET /api/v1/dashboard/stream — Server-Sent Events (SSE) stream for real-time live log feeds.
+     */
+    @GetMapping(value = "/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter streamEvents() {
+        return sseNotificationService.subscribe();
     }
 }

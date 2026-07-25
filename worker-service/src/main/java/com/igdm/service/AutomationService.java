@@ -3,6 +3,7 @@ package com.igdm.service;
 import com.igdm.entity.AutomationRule;
 import com.igdm.entity.InstagramAccount;
 import com.igdm.entity.InteractionLog;
+import com.igdm.entity.User;
 import com.igdm.dto.CommentEventMessage;
 import com.igdm.dto.CommentEventMessage.CommentPayload;
 import com.igdm.repository.AutomationRuleRepository;
@@ -36,14 +37,17 @@ public class AutomationService {
     private final InstagramAccountRepository igAccountRepo;
     private final AutomationRuleRepository ruleRepo;
     private final InteractionLogRepository logRepo;
+    private final SseNotificationService sseService;
 
     public AutomationService(
             InstagramAccountRepository igAccountRepo,
             AutomationRuleRepository ruleRepo,
-            InteractionLogRepository logRepo) {
+            InteractionLogRepository logRepo,
+            SseNotificationService sseService) {
         this.igAccountRepo = igAccountRepo;
         this.ruleRepo = ruleRepo;
         this.logRepo = logRepo;
+        this.sseService = sseService;
     }
 
     /**
@@ -136,13 +140,17 @@ public class AutomationService {
         // --- 5. Check each rule for a trigger match ---
         for (AutomationRule rule : activeRules) {
             if (matchesTrigger(rule, payload)) {
-                // --- 6. Check daily limit ---
-                if (rule.getDmSentToday() >= rule.getDailyDmLimit()) {
-                    log.warn("Daily DM limit reached for rule '{}' ({}/{})",
-                            rule.getName(), rule.getDmSentToday(), rule.getDailyDmLimit());
+                // --- 6. Check user subscription plan tier daily limits ---
+                User user = account.getUser();
+                int planMaxDms = "enterprise".equalsIgnoreCase(user.getPlanTier()) ? Integer.MAX_VALUE :
+                                 "pro".equalsIgnoreCase(user.getPlanTier()) ? 1000 : 100;
+
+                if (rule.getDmSentToday() >= rule.getDailyDmLimit() || rule.getDmSentToday() >= planMaxDms) {
+                    log.warn("Daily DM limit reached for rule '{}' ({}/{} - Plan: {})",
+                            rule.getName(), rule.getDmSentToday(), Math.min(rule.getDailyDmLimit(), planMaxDms), user.getPlanTier());
                     interactionLog.setRule(rule);
                     interactionLog.setStatus("RATE_LIMITED");
-                    interactionLog.setErrorMessage("Daily DM limit reached");
+                    interactionLog.setErrorMessage("Daily DM limit reached (" + user.getPlanTier().toUpperCase() + " tier cap)");
                     logRepo.save(interactionLog);
                     return ProcessingResult.rateLimited(rule, interactionLog);
                 }
@@ -241,6 +249,16 @@ public class AutomationService {
         ruleRepo.incrementDmSentToday(rule.getId());
 
         log.info("DM sent successfully for comment {}", interactionLog.getIgCommentId());
+
+        if (sseService != null) {
+            sseService.broadcastInteractionLog(
+                    interactionLog.getId().toString(),
+                    interactionLog.getIgCommenterUsername(),
+                    interactionLog.getCommentText(),
+                    "SENT",
+                    rule != null ? rule.getName() : "Rule"
+            );
+        }
     }
 
     /**
@@ -254,5 +272,15 @@ public class AutomationService {
         logRepo.save(interactionLog);
 
         log.error("DM failed for comment {}: {}", interactionLog.getIgCommentId(), errorMessage);
+
+        if (sseService != null) {
+            sseService.broadcastInteractionLog(
+                    interactionLog.getId().toString(),
+                    interactionLog.getIgCommenterUsername(),
+                    interactionLog.getCommentText(),
+                    "FAILED",
+                    interactionLog.getRule() != null ? interactionLog.getRule().getName() : "Rule"
+            );
+        }
     }
 }

@@ -45,9 +45,11 @@ public class RateLimitService {
     private final AtomicReference<Instant> throttledUntil = new AtomicReference<>(null);
 
     private final ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
-    public RateLimitService(ObjectMapper objectMapper) {
+    public RateLimitService(ObjectMapper objectMapper, NotificationService notificationService) {
         this.objectMapper = objectMapper;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -99,10 +101,14 @@ public class RateLimitService {
             log.debug("x-app-usage updated: call_count={}%, total_cputime={}%, total_time={}%",
                     callCount, cpuTime, totalTime);
 
-            // If any metric exceeds 80%, log a warning
+            // If any metric exceeds 80%, log a warning and dispatch notification
             if (callCount >= THROTTLE_THRESHOLD || cpuTime >= THROTTLE_THRESHOLD || totalTime >= THROTTLE_THRESHOLD) {
                 log.warn("⚠ Rate limit approaching: call_count={}%, total_cputime={}%, total_time={}%",
                         callCount, cpuTime, totalTime);
+
+                if (notificationService != null) {
+                    notificationService.sendRateLimitAlert(callCount, cpuTime, totalTime);
+                }
             }
 
         } catch (Exception e) {
